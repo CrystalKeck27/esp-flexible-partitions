@@ -207,7 +207,7 @@ impl<'a> PartitionTable<'a> {
                 loop {
                     if let Ok(entry) = raw_table.get_partition(i) {
                         if entry.magic() == MD5_MAGIC {
-                            break (&binary[i][16..][..16], i);
+                            break (&entry.as_bytes()[16..][..16], i);
                         }
 
                         i += 1;
