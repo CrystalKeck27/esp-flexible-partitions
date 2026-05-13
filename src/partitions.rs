@@ -6,7 +6,6 @@
 //! writing/reading partition contents.
 //!
 //! For more information see <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html#built-in-partition-tables>
-use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use zerocopy::{
     FromBytes, Immutable, IntoBytes, KnownLayout,
@@ -110,10 +109,10 @@ impl PartitionEntry {
     /// The partition type (type and sub-type).
     pub fn partition_type(&self) -> PartitionType {
         match self.raw_type() {
-            0 => PartitionType::App(self.raw_subtype().try_into().unwrap()),
-            1 => PartitionType::Data(self.raw_subtype().try_into().unwrap()),
-            2 => PartitionType::Bootloader(self.raw_subtype().try_into().unwrap()),
-            3 => PartitionType::PartitionTable(self.raw_subtype().try_into().unwrap()),
+            0 => PartitionType::App(AppPartitionSubType::from_repr(self.raw_subtype()).unwrap()),
+            1 => PartitionType::Data(DataPartitionSubType::from_repr(self.raw_subtype()).unwrap()),
+            2 => PartitionType::Bootloader(BootloaderPartitionSubType::from_repr(self.raw_subtype()).unwrap()),
+            3 => PartitionType::PartitionTable(PartitionTablePartitionSubType::from_repr(self.raw_subtype()).unwrap()),
             _ => unreachable!(),
         }
     }
@@ -146,7 +145,7 @@ impl core::fmt::Debug for PartitionEntry {
 }
 
 /// Errors which can be returned.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, strum::Display)]
 #[non_exhaustive]
 pub enum Error {
     /// The partition table is invalid or doesn't contain a needed partition.
@@ -168,7 +167,7 @@ pub enum Error {
     InvalidArgument,
 }
 
-// impl core::error::Error for Error {}
+impl core::error::Error for Error {}
 
 /// A partition table.
 #[derive(Debug)]
@@ -335,7 +334,7 @@ pub enum RawPartitionType {
 }
 
 /// Sub-types of an application partition.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, IntoPrimitive, TryFromPrimitive)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, strum::Display, strum::FromRepr)]
 #[repr(u8)]
 pub enum AppPartitionSubType {
     /// Factory image
@@ -385,12 +384,12 @@ impl AppPartitionSubType {
         if number > 16 {
             return Err(Error::InvalidArgument);
         }
-        Self::try_from(number + OTA_SUBTYPE_OFFSET).map_err(|_x| Error::InvalidArgument)
+        Self::from_repr(number + OTA_SUBTYPE_OFFSET).ok_or(Error::InvalidArgument)
     }
 }
 
 /// Sub-types of the data partition type.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, IntoPrimitive, TryFromPrimitive)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, strum::Display, strum::FromRepr)]
 #[repr(u8)]
 pub enum DataPartitionSubType {
     /// Data partition which stores information about the currently selected OTA
@@ -420,7 +419,7 @@ pub enum DataPartitionSubType {
 }
 
 /// Sub-type of the bootloader partition type.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, IntoPrimitive, TryFromPrimitive)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, strum::Display, strum::FromRepr)]
 #[repr(u8)]
 pub enum BootloaderPartitionSubType {
     /// It is the so-called 2nd stage bootloader.
@@ -431,7 +430,7 @@ pub enum BootloaderPartitionSubType {
 }
 
 /// Sub-type of the partition table type.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, IntoPrimitive, TryFromPrimitive)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, strum::Display, strum::FromRepr)]
 #[repr(u8)]
 pub enum PartitionTablePartitionSubType {
     /// It is the primary partition table.
