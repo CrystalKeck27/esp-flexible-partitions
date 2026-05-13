@@ -121,7 +121,7 @@ impl PartitionEntry {
     /// Provides a "view" into the partition allowing to read/write the
     /// partition contents by using the given [embedded_storage::Storage] and/or
     /// [embedded_storage::ReadStorage] implementation.
-    pub fn as_embedded_storage<'a, F>(self, flash: &'a mut F) -> FlashRegion<'a, F>
+    pub fn as_embedded_storage<'a, F>(&'a self, flash: &'a mut F) -> FlashRegion<'a, F>
     where
         F: embedded_storage::ReadStorage,
     {
@@ -462,7 +462,7 @@ pub fn read_partition_table<'a, const PARTITION_TABLE_OFFSET: u32>(
 /// the partition offset.
 #[derive(Debug)]
 pub struct FlashRegion<'a, F> {
-    pub(crate) raw: PartitionEntry,
+    pub(crate) raw: &'a PartitionEntry,
     pub(crate) flash: &'a mut F,
 }
 
